@@ -1,6 +1,7 @@
 //! Build and draw geometry.
 use crate::core::{Point, Rectangle, Size, Vector};
 use crate::graphics::color;
+use crate::graphics::core::image;
 use crate::graphics::geometry::fill::{self, Fill};
 use crate::graphics::geometry::{
     LineCap, LineDash, LineJoin, Path, Stroke, Style, Text,
@@ -344,6 +345,55 @@ impl Frame {
             horizontal_alignment: text.horizontal_alignment,
             vertical_alignment: text.vertical_alignment,
             shaping: text.shaping,
+        });
+    }
+
+    /// Draws the contents of given [`image::Handle`] on the [`Frame`],
+    /// filling the [`Rectangle`] bounds.
+    ///
+    /// __Warning:__ Image currently does not work well with rotations!
+    /// The position will be correctly transformed, but the
+    /// resulting glyphs will not be rotated properly.
+    ///
+    /// Additionally, all images will be rendered on top of all the layers of
+    /// a `Canvas`. Therefore, it is currently only meant to be used for
+    /// overlays.
+    ///
+    /// Support for proper layering is planned, and should address all these
+    /// limitations.
+    pub fn draw_image(
+        &mut self,
+        handle: image::Handle,
+        filter_method: image::FilterMethod,
+        bounds: Rectangle,
+    ) {
+        let bounds = if self.transforms.current.is_identity {
+            bounds
+        } else {
+            let top_left_transformed =
+                self.transforms.current.raw.transform_point(
+                    lyon::math::Point::new(bounds.x, bounds.y),
+                );
+            let bottom_right_transformed =
+                self.transforms.current.raw.transform_point(
+                    lyon::math::Point::new(
+                        bounds.x + bounds.width,
+                        bounds.y + bounds.height,
+                    ),
+                );
+
+            Rectangle {
+                x: top_left_transformed.x,
+                y: top_left_transformed.y,
+                width: bottom_right_transformed.x - top_left_transformed.x,
+                height: bottom_right_transformed.y - top_left_transformed.y,
+            }
+        };
+
+        self.primitives.push(Primitive::Image {
+            handle,
+            filter_method,
+            bounds,
         });
     }
 

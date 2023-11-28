@@ -3,6 +3,7 @@ mod cache;
 pub use cache::Cache;
 
 use crate::core::{Point, Rectangle, Size, Vector};
+use crate::graphics::core::image;
 use crate::graphics::geometry::{Fill, Path, Stroke, Text};
 use crate::Renderer;
 
@@ -103,6 +104,28 @@ impl Frame {
     /// limitations.
     pub fn fill_text(&mut self, text: impl Into<Text>) {
         delegate!(self, frame, frame.fill_text(text));
+    }
+
+    /// Draws the contents of given [`image::Handle`] on the [`Frame`],
+    /// filling the [`Rectangle`] bounds.
+    ///
+    /// __Warning:__ Image currently does not work well with rotations!
+    /// The position will be correctly transformed, but the
+    /// resulting glyphs will not be rotated properly.
+    ///
+    /// Additionally, all images will be rendered on top of all the layers of
+    /// a `Canvas`. Therefore, it is currently only meant to be used for
+    /// overlays.
+    ///
+    /// Support for proper layering is planned, and should address all these
+    /// limitations.
+    pub fn draw_image(
+        &mut self,
+        handle: image::Handle,
+        filter_method: image::FilterMethod,
+        bounds: Rectangle,
+    ) {
+        delegate!(self, frame, frame.draw_image(handle, filter_method, bounds));
     }
 
     /// Stores the current transform of the [`Frame`] and executes the given

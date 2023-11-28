@@ -1,4 +1,5 @@
 use crate::core::{Point, Rectangle, Size, Vector};
+use crate::graphics::core::image;
 use crate::graphics::geometry::fill::{self, Fill};
 use crate::graphics::geometry::stroke::{self, Stroke};
 use crate::graphics::geometry::{Path, Style, Text};
@@ -125,6 +126,45 @@ impl Frame {
             horizontal_alignment: text.horizontal_alignment,
             vertical_alignment: text.vertical_alignment,
             shaping: text.shaping,
+        });
+    }
+
+    pub fn draw_image(
+        &mut self,
+        handle: image::Handle,
+        filter_method: image::FilterMethod,
+        bounds: Rectangle,
+    ) {
+        let bounds = if self.transform.is_identity() {
+            bounds
+        } else {
+            let mut transformed = [
+                tiny_skia::Point {
+                    x: bounds.x,
+                    y: bounds.y,
+                },
+                tiny_skia::Point {
+                    x: bounds.x + bounds.width,
+                    y: bounds.y + bounds.height,
+                },
+            ];
+
+            self.transform.map_points(&mut transformed);
+
+            let [top_left_transformed, bottom_right_transformed] = transformed;
+
+            Rectangle {
+                x: top_left_transformed.x,
+                y: top_left_transformed.y,
+                width: bottom_right_transformed.x - top_left_transformed.x,
+                height: bottom_right_transformed.y - top_left_transformed.y,
+            }
+        };
+
+        self.primitives.push(Primitive::Image {
+            handle,
+            filter_method,
+            bounds,
         });
     }
 
